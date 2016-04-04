@@ -65,11 +65,11 @@ set( spec_libs
      )
 
 set( libsources
-  src/Maneuver.cpp)
+  src/SamplingVolume.cpp src/Maneuver.cpp)
 set( sources
   src/cutplan.cpp)
 
-add_library(cutplan_lib ./src/Maneuver.cpp)
+add_library(cutplan_lib ${libsources})
 target_link_libraries(cutplan_lib
   ${CGAL_LIBRARIES} CGAL_Core ${CGAL_3RD_PARTY_LIBRARIES} ${EIGEN_LIBRARIES} ${OMPL_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 

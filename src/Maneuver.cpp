@@ -1,4 +1,5 @@
 #include <cutplan/Maneuver.h>
+#include <cutplan/SamplingVolume.h>
 
 namespace cutplan
 {
@@ -73,13 +74,31 @@ Maneuver& Maneuver::operator=(Maneuver const& orig)
 
 bool Maneuver::filterForbidden(meshproc_csg::MeshEntry const& forbidden)
 {
-
-    return true;
+    /*
+     *  - substract forbidden from volume <- ok
+     *  - select connected component of highest volume from the result <- check that we have sep. by connected comps
+     *  - sample connected component to reinit g+, g-, v, ps; <- ok-ish, needs a def. of the other class
+    */
+    std::vector<tPointSpec> samples;
+    if(!inited)
+        return false;
+    volume->setFromDifference(*volume, forbidden);
+    //
+    return setFromSample(samples);
 }
 bool Maneuver::filterForbidden(meshproc_csg::MeshEntry const& forbidden, meshproc_csg::MeshEntry const& collector)
 {
-
-    return true;
+    /*
+     *  - substract forbidden from volume <- ok
+     *  - select connected component of highest volume from the result <- check that we have sep. by connected comps
+     *  - sample connected component to reinit g+, g-, v, ps; <- ok-ish, needs a def. of the other class
+    */
+    std::vector<tPointSpec> samples;
+    if(!inited)
+        return false;
+    volume->setFromDifference(*volume, forbidden);
+    //
+    return setFromSample(samples, collector);
 }
 
 MeshEntryConstPtr Maneuver::getGoalPlus(void) const
