@@ -49,10 +49,7 @@
 namespace cutplan
 {
 
-typedef struct
-{
-    double x, y, z;
-}tPointSpec;
+typedef meshproc_csg::Point tPointSpec;
 
 typedef boost::shared_ptr<meshproc_csg::MeshEntry> MeshEntryPtr;
 typedef boost::shared_ptr<meshproc_csg::MeshEntry const> MeshEntryConstPtr;

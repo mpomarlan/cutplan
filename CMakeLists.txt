@@ -34,13 +34,32 @@ if ( NOT Boost_FOUND )
   return()  
 endif()
 
+
+
+set(MSG_FILES
+  Dummy.msg
+)
+
+set(SRV_FILES
+  GetManeuver.srv
+)
+
+set(ACT_FILES
+)
+
+#add_action_files(DIRECTORY action FILES ${ACT_FILES})
+add_message_files(DIRECTORY msg FILES ${MSG_FILES})
+add_service_files(DIRECTORY srv FILES ${SRV_FILES})
+
 find_package(PkgConfig)
 find_package(OMPL REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   trimesh
   meshproc_csg
   meshproc_msgs
+  std_msgs
   shape_msgs
+  message_generation
   roscpp
   roslib
 )
@@ -48,6 +67,8 @@ find_package(catkin REQUIRED COMPONENTS
 include_directories(${catkin_INCLUDE_DIRS})
 link_directories(${catkin_LIBRARY_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
+
+generate_messages(DEPENDENCIES std_msgs shape_msgs)
 
 catkin_package(
   INCLUDE_DIRS
@@ -65,9 +86,9 @@ set( spec_libs
      )
 
 set( libsources
-  src/SamplingVolume.cpp src/Maneuver.cpp)
+  src/SamplingVolume.cpp src/Maneuver.cpp src/ManeuverPlanner.cpp)
 set( sources
-  src/cutplan.cpp)
+  src/cutplan.cpp src/ExampleManeuvers.cpp src/ExamplePlanners.cpp)
 
 add_library(cutplan_lib ${libsources})
 target_link_libraries(cutplan_lib

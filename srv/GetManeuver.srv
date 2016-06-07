@@ -1,0 +1,15 @@
+string maneuver
+string goal
+string collector
+string forbidden
+string goal_plus
+string goal_minus
+string new_goal
+---
+int8 have_maneuver
+int8 mesh_goal_loaded
+int8 mesh_collector_loaded
+int8 mesh_forbidden_loaded
+int8 operation_done
+float64[] parameters
+
