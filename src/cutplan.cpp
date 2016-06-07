@@ -143,9 +143,9 @@ bool do_GetManeuver(cutplan::GetManeuver::Request &req,
 
     if(req.forbidden != "")
     {
-        collIt = loadedMeshes.find(req.forbidden);
+        forbIt = loadedMeshes.find(req.forbidden);
         useForbidden = true;
-        if(collIt != loadedMeshes.end())
+        if(forbIt != loadedMeshes.end())
             res.mesh_forbidden_loaded = true;
     }
 
@@ -196,10 +196,15 @@ bool do_GetManeuver(cutplan::GetManeuver::Request &req,
         goalIt->second->getVertexSample(4, samples);
         maneuver.reset(new cutplan::Wiper());
     }
+
+
+    fVol->getMeshEntry();
+
     if(useCollector)
         res.operation_done = maneuver->setFromSample(samples, fVol->getMeshEntry(), rVol, cVol);
     else
         res.operation_done = maneuver->setFromSample(samples, fVol->getMeshEntry());
+
     if(res.operation_done)
     {
         gPlus->update(maneuver->getGoalPlus());
@@ -209,6 +214,7 @@ bool do_GetManeuver(cutplan::GetManeuver::Request &req,
 
     if(res.operation_done)
     {
+        res.parameters = maneuver->getParameters();
         if(req.goal_plus != "")
         {
             gPlsIt = loadedMeshes.find(req.goal_plus);

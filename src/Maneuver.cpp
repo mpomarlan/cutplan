@@ -307,7 +307,6 @@ bool Maneuver::setFromSample(std::vector<tPointSpec> const& samples, meshproc_cs
 
     if(!shapeFromSample(samples, direction))
         return false;
-    std::cout << "FF" << std::endl;
     return filterForbidden(forbidden, regularizedGoal, collector);
 }
 
@@ -421,10 +420,7 @@ bool Maneuver::getMaxVolumeCC(meshproc_csg::MeshEntry & v) const
             }
     }
 
-    std::cout << "MSG" << std::endl;
-
     v.loadFromMsg(meshMsg, 0.00001);
-    std::cout << "LMG" << std::endl;
 
     return true;
 }
@@ -521,11 +517,17 @@ bool Maneuver::filterForbidden(meshproc_csg::MeshEntry const& forbidden, Samplin
 
 MeshEntryConstPtr Maneuver::getGoalPlus(void) const
 {
-    return goalPlus;
+    if(goalPlus.get())
+        return goalPlus;
+    else
+        return MeshEntryConstPtr(new meshproc_csg::MeshEntry());
 }
 MeshEntryConstPtr Maneuver::getGoalMinus(void) const
 {
-    return goalMinus;
+    if(goalMinus.get())
+        return goalMinus;
+    else
+        return MeshEntryConstPtr(new meshproc_csg::MeshEntry());
 }
 std::vector<double> Maneuver::getParameters(void) const
 {
