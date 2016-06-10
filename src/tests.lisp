@@ -41,6 +41,9 @@
 
 (defparameter *goal-color* (roslisp:make-message "std_msgs/ColorRGBA" :a 1 :r 0.8 :g 0.7 :b 0.3))
 
+(defparameter *collector-color* (roslisp:make-message "std_msgs/ColorRGBA" :a 1 :r 0.3 :g 0.8 :b 0.3))
+
+(defparameter *forbidden-color* (roslisp:make-message "std_msgs/ColorRGBA" :a 1 :r 0.8 :g 0.3 :b 0.3))
 
 (defun tr->ps (transform)
   (let* ((v (cl-transforms:translation transform))
@@ -55,18 +58,6 @@
     (roslisp:make-message "geometry_msgs/Pose"
       :position (roslisp:make-message "geometry_msgs/Point" :x x :y y :z z)
       :orientation (roslisp:make-message "geometry_msgs/Quaternion" :x qx :y qy :z qz :w qw))))
-
-(defun init-brush-test (goal-mesh-path &optional (visualization-topic "/visualization_marker"))
-  (roslisp:call-service "/cutplan/LoadMesh" "meshproc_msgs/LoadMesh"
-                        :mesh_name "goal"
-                        :mesh_filenames (list goal-mesh-path)
-                        :duplicate_dist 0.0001)
-  (setf *pub-mrk* (roslisp:advertise visualization-topic "visualization_msgs/Marker" :latch nil))
-  (setf *identity-pose* (cl-transforms:make-transform (cl-transforms:make-3d-vector 0.0 0.0 0.0)
-                                                      (cl-transforms:make-quaternion 0 0 0 1)))
-  (setf *crstep* 0)
-  (setf *identity-pose-msg* (tr->ps *identity-pose*)))
-
 
 (defun make-mrk-msg (base-frame-name frame-locked id action pose color mesh-resource)
   (roslisp:make-message "visualization_msgs/Marker"
@@ -83,11 +74,79 @@
                                                :color color
                                                :mesh_resource mesh-resource))
 
+(defun init-brush-test (&optional (goal-mesh-path (format nil "~ameshes/demo_goal.stl" (namestring (ros-load-manifest:ros-package-path "cutplan")))) 
+                                  (visualization-topic "/visualization_marker"))
+  (roslisp:call-service "/cutplan/UnloadMesh" "meshproc_msgs/UnloadMesh"
+                        :mesh_name "goal")
+  (roslisp:call-service "/cutplan/LoadMesh" "meshproc_msgs/LoadMesh"
+                        :mesh_name "goal"
+                        :mesh_filenames (list goal-mesh-path)
+                        :duplicate_dist 0.0001)
+  (setf *pub-mrk* (roslisp:advertise visualization-topic "visualization_msgs/Marker" :latch nil))
+  (setf *identity-pose* (cl-transforms:make-transform (cl-transforms:make-3d-vector 0.0 0.0 0.0)
+                                                      (cl-transforms:make-quaternion 0 0 0 1)))
+  (setf *crstep* 0)
+  (setf *identity-pose-msg* (tr->ps *identity-pose*))
+  (roslisp:publish *pub-mrk* (make-mrk-msg *base-link* 0 1 0 *identity-pose-msg* *goal-color* goal-mesh-path)))
+
+(defun init-wiper-test (&optional (goal-mesh-path (format nil "~ameshes/demo_goal.stl" (namestring (ros-load-manifest:ros-package-path "cutplan"))))
+                                  (collector-mesh-path (format nil "~ameshes/demo_collector.stl" (namestring (ros-load-manifest:ros-package-path "cutplan"))))
+                                  (forbidden-mesh-path (format nil "~ameshes/demo_forbidden.stl" (namestring (ros-load-manifest:ros-package-path "cutplan"))))
+                                  (visualization-topic "/visualization_marker"))
+  (roslisp:call-service "/cutplan/UnloadMesh" "meshproc_msgs/UnloadMesh"
+                        :mesh_name "goal")
+  (roslisp:call-service "/cutplan/UnloadMesh" "meshproc_msgs/UnloadMesh"
+                        :mesh_name "collector")
+  (roslisp:call-service "/cutplan/UnloadMesh" "meshproc_msgs/UnloadMesh"
+                        :mesh_name "forbidden")
+  (roslisp:call-service "/cutplan/LoadMesh" "meshproc_msgs/LoadMesh"
+                        :mesh_name "goal"
+                        :mesh_filenames (list goal-mesh-path)
+                        :duplicate_dist 0.0001)
+  (roslisp:call-service "/cutplan/LoadMesh" "meshproc_msgs/LoadMesh"
+                        :mesh_name "forbidden"
+                        :mesh_filenames (list forbidden-mesh-path)
+                        :duplicate_dist 0.0001)
+  (roslisp:call-service "/cutplan/LoadMesh" "meshproc_msgs/LoadMesh"
+                        :mesh_name "collector"
+                        :mesh_filenames (list collector-mesh-path)
+                        :duplicate_dist 0.0001)
+  (setf *pub-mrk* (roslisp:advertise visualization-topic "visualization_msgs/Marker" :latch nil))
+  (setf *identity-pose* (cl-transforms:make-transform (cl-transforms:make-3d-vector 0.0 0.0 0.0)
+                                                      (cl-transforms:make-quaternion 0 0 0 1)))
+  (setf *crstep* 0)
+  (setf *identity-pose-msg* (tr->ps *identity-pose*))
+  (roslisp:publish *pub-mrk* (make-mrk-msg *base-link* 0 1 0 *identity-pose-msg* *goal-color* goal-mesh-path))
+  (roslisp:publish *pub-mrk* (make-mrk-msg *base-link* 0 2 0 *identity-pose-msg* *collector-color* collector-mesh-path))
+  (roslisp:publish *pub-mrk* (make-mrk-msg *base-link* 0 3 0 *identity-pose-msg* *forbidden-color* forbidden-mesh-path)))
+
 (defun step-brush-test ()
   (let* ((maneuver (roslisp:call-service "/cutplan/GetManeuver" "cutplan/GetManeuver"
                                          :maneuver "brush"
                                          :goal "goal"
                                          :forbidden ""
+                                         :goal_minus "goal_minus"
+                                         :new_goal "goal"))
+         (dummy (roslisp:call-service "/cutplan/GetMesh" "meshproc_msgs/GetMesh"
+                                      :mesh_name "goal"
+                                      :result_to_file 1
+                                      :result_filename (format nil "~aoutputs/goal_~a_out.stl" (namestring (ros-load-manifest:ros-package-path "cutplan")) *crstep*)))
+         (goal-msg (make-mrk-msg *base-link* 0 1 0
+                                 *identity-pose-msg*
+                                 *goal-color*
+                                 (format nil "package://cutplan/outputs/goal_~a_out.stl" *crstep*))))
+    (declare (ignore dummy))
+    (setf *crstep* (+ *crstep* 1))
+    (roslisp:publish *pub-mrk* goal-msg)
+    (roslisp:with-fields (parameters) maneuver
+      parameters)))
+
+(defun step-wiper-test ()
+  (let* ((maneuver (roslisp:call-service "/cutplan/GetManeuver" "cutplan/GetManeuver"
+                                         :maneuver "wiper"
+                                         :goal "goal"
+                                         :forbidden "forbidden"
+                                         :collector "collector"
                                          :goal_minus "goal_minus"
                                          :new_goal "goal"))
          (dummy (roslisp:call-service "/cutplan/GetMesh" "meshproc_msgs/GetMesh"
