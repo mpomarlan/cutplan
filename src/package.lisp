@@ -29,8 +29,7 @@
 
 (in-package :cl-user)
 
-(defpackage :cutplan-demo
-  (:use #:cl
-        #:cl-transforms-stamped #:cl-transforms)
-  (:export #:init-brush-test
-           #:step-brush-test))
+(defpackage :cutplan
+  (:use :cl :roslisp :cutplan-srv)
+  (:export #:cut-test
+           #:start-cutplan-node))
